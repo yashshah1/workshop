@@ -24,17 +24,30 @@
 				return document.createElement("span");
 			}
 
-			function get_actions_cell(id) {
+			function get_actions_cell(id, status) {
 				var td = document.createElement("td");
 
-				var b_okay = get_button();
-				b_okay.id = "complete_" + id;
-				b_okay.classList.add("btn", "btn-success", "complete");
+				if (status == 0) {
+					var b_okay = get_button();
+					b_okay.id = "complete_" + id;
+					b_okay.classList.add("btn", "btn-success", "complete");
 
-				var s_okay = get_span();
-				s_okay.classList.add("glyphicon", "glyphicon-ok");
+					var s_okay = get_span();
+					s_okay.classList.add("glyphicon", "glyphicon-ok");
 
-				b_okay.appendChild(s_okay);
+					b_okay.appendChild(s_okay);
+				}
+				else {
+					var b_okay = get_button();
+					b_okay.id = "incomplete_" + id;
+					b_okay.classList.add("btn", "btn-success", "complete");
+
+					var s_okay = get_span();
+					s_okay.classList.add("glyphicon", "glyphicon-repeat");
+
+					b_okay.appendChild(s_okay);
+
+				}
 
 
 				var b_edit = get_button();
@@ -80,7 +93,7 @@
 					td_status.innerHTML = "Complete";	
 				}
 
-				var td_actions = get_actions_cell(data.id);
+				var td_actions = get_actions_cell(data.id, data.status);
 
 				tr.appendChild(td_id);
 				tr.appendChild(td_name);
@@ -101,17 +114,30 @@
 						tbody.appendChild(tr);
 					}
 				}
-				console.log(json_obj.length)
 			}
 
-			function complete() {
-				console.log("complete " + this.id)
+			function complete_function() {
+				var id = this.id.split("_")[1];
+				id = id;
+				var object = {"C": 1, id: id};
+				console.log(object);
+				var xhttp = new XMLHttpRequest();
+				var theUrl = "main.php";
+				xhttp.open("POST", theUrl, true);
+				xhttp.setRequestHeader("Content-Type", "application/json");
+				xhttp.onreadystatechange = function() {
+				    if (this.readyState === 4 && this.status === 200) {
+				    	res = JSON.parse(this.responseText);
+				    	console.log(res);
+				    }
+				}
+				xhttp.send(JSON.stringify(object))
 			}
-			function edit() {
-				console.log("edit " + this.id)
+			function edit_function() {
+				console.log(this.id)
 			}
 			function delete_function() {
-				console.log("delete " + this.id)
+				console.log(this.id)
 			}
 
 			function addEventListeners(classname, function_name) {
@@ -122,15 +148,15 @@
 			}
 
 			var xmlhttp = new XMLHttpRequest();
-			var theUrl = "main.php";
+			var theUrl = "main.php"
 			xmlhttp.open("POST", theUrl, true);
 			xmlhttp.setRequestHeader("Content-Type", "application/json");
 			xmlhttp.onreadystatechange = function() {
 			    if (this.readyState === 4 && this.status === 200) {
 			        create_table(JSON.parse(this.responseText))
 
-			        addEventListeners("complete", complete);
-			        addEventListeners("edit", edit);
+			        addEventListeners("complete", complete_function);
+			        addEventListeners("edit", edit_function);
 			        addEventListeners("delete", delete_function);
 
 
