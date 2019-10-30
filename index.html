@@ -24,7 +24,7 @@
 				return document.createElement("span");
 			}
 
-			function get_actions_cell(id, status) {
+			function get_default_actions_cell(id, status) {
 				var td = document.createElement("td");
 
 				if (status == 0) {
@@ -36,16 +36,18 @@
 					s_okay.classList.add("glyphicon", "glyphicon-ok");
 
 					b_okay.appendChild(s_okay);
+					b_okay.addEventListener('click', complete_function, false);
 				}
 				else {
 					var b_okay = get_button();
 					b_okay.id = "incomplete_" + id;
-					b_okay.classList.add("btn", "btn-success", "complete");
+					b_okay.classList.add("btn", "btn-success", "incomplete");
 
 					var s_okay = get_span();
 					s_okay.classList.add("glyphicon", "glyphicon-repeat");
 
 					b_okay.appendChild(s_okay);
+					b_okay.addEventListener('click', incomplete_function, false);
 
 				}
 
@@ -58,6 +60,7 @@
 				s_edit.classList.add("glyphicon", "glyphicon-edit");
 
 				b_edit.appendChild(s_edit);
+				b_edit.addEventListener('click', edit_function, false);
 
 				var b_delete = get_button();
 				b_delete.id = "delete_" + id;
@@ -67,15 +70,17 @@
 				s_delete.classList.add("glyphicon", "glyphicon-remove");
 
 				b_delete.appendChild(s_delete);
+				b_delete.addEventListener('click', delete_function, false);
 
 				td.appendChild(b_okay);
 				td.appendChild(b_edit);
 				td.appendChild(b_delete);
 				return td
-
 			}
+
 			function make_row(tbody, data, i) {
 				var tr = document.createElement("tr");
+				tr.id = "row_" + data.id
 
 				var td_id = document.createElement("td");
 				td_id.innerHTML = i + 1;
@@ -93,7 +98,7 @@
 					td_status.innerHTML = "Complete";	
 				}
 
-				var td_actions = get_actions_cell(data.id, data.status);
+				var td_actions = get_default_actions_cell(data.id, data.status);
 
 				tr.appendChild(td_id);
 				tr.appendChild(td_name);
@@ -105,22 +110,67 @@
 			function create_table(json_obj) {
 				var tbody = document.getElementById('tbody');
 				if (json_obj.length === 0) {
-					tbody.parentElement.parentElement.removeChild(tbody.parentElement);
 				}
 				else {
+					ids = []
 					data = json_obj['data'];
 					for(i = 0; i < data.length; i++) {
-						tr = make_row(tbody, data[i], i);
-						tbody.appendChild(tr);
+						info = data[i];
+						ids.push(info.id)
+						if (!(row = existsEntry(info.id))) {
+							tr = make_row(tbody, data[i], i);
+							tbody.appendChild(tr);	
+						}
+						else {
+							if (row.children[2].innerHTML == "Complete") {
+								if (info.status == 0) {
+									var td_status = document.createElement('td');
+
+						    		td_status.style.color = "red";
+									td_status.innerHTML = "Not Complete";
+
+									var td_actions = get_default_actions_cell(info.id, '0');
+									row.replaceChild(td_status, row.children[2]);
+									row.replaceChild(td_actions, row.children[3]);
+								}
+							}
+							else {	
+								if (info.status == 1) {
+									var td_status = document.createElement('td');
+
+						    		td_status.style.color = "green";
+									td_status.innerHTML = "Complete";
+
+									var td_actions = get_default_actions_cell(info.id, '1');
+									row.replaceChild(td_status, row.children[2]);
+									row.replaceChild(td_actions, row.children[3]);
+								}
+							}
+
+							if(row.children[1].innerHTML != info.task) {
+								row.children[1].innerHTML = info.task	
+							}
+						}
+					}
+					for(i = 0; i < tbody.children.length; i++) {
+						row = tbody.children[i]
+						if (row.children[0].innerHTML != i + 1) {
+							row.children[0].innerHTML = i + 1
+						}
+						databaseid = row.id.split("_")[1]
+						if (ids.indexOf(databaseid) == -1) {
+							row.parentElement.removeChild(row)
+						}
 					}
 				}
 			}
-
+			function existsEntry(id) {
+				return document.getElementById("row_" + id)
+			}
 			function complete_function() {
 				var id = this.id.split("_")[1];
-				id = id;
+				var row = this.parentElement.parentElement
 				var object = {"C": 1, id: id};
-				console.log(object);
 				var xhttp = new XMLHttpRequest();
 				var theUrl = "main.php";
 				xhttp.open("POST", theUrl, true);
@@ -128,7 +178,17 @@
 				xhttp.onreadystatechange = function() {
 				    if (this.readyState === 4 && this.status === 200) {
 				    	res = JSON.parse(this.responseText);
-				    	console.log(res);
+				    	if (res.status == 200) {
+				    		var td_status = document.createElement('td');
+
+				    		td_status.style.color = "green";
+							td_status.innerHTML = "Complete";
+
+							var td_actions = get_default_actions_cell(id, '1');
+							row.replaceChild(td_status, row.children[2]);
+							row.replaceChild(td_actions, row.children[3]);
+
+				    	}
 				    }
 				}
 				xhttp.send(JSON.stringify(object))
@@ -137,32 +197,65 @@
 				console.log(this.id)
 			}
 			function delete_function() {
-				console.log(this.id)
-			}
+				var id = this.id.split("_")[1];
+				var row = this.parentElement.parentElement
+				var object = {"D": 1, id: id};
+				var xhttp = new XMLHttpRequest();
+				var theUrl = "main.php";
+				xhttp.open("POST", theUrl, true);
+				xhttp.setRequestHeader("Content-Type", "application/json");
+				xhttp.onreadystatechange = function() {
+				    if (this.readyState === 4 && this.status === 200) {
+				    	res = JSON.parse(this.responseText);
+				    	if (res.status == 200) {
+				    		row.parentElement.removeChild(row)
 
-			function addEventListeners(classname, function_name) {
-				var c = document.getElementsByClassName(classname);
-				for (var i = 0; i < c.length; i++) {
-					    c[i].addEventListener('click', function_name, false);
+				    	}
+				    }
 				}
+				xhttp.send(JSON.stringify(object))
+			}
+			function incomplete_function() {
+				var id = this.id.split("_")[1];
+				var row = this.parentElement.parentElement
+				var object = {"I": 1, id: id};
+				var xhttp = new XMLHttpRequest();
+				var theUrl = "main.php";
+				xhttp.open("POST", theUrl, true);
+				xhttp.setRequestHeader("Content-Type", "application/json");
+				xhttp.onreadystatechange = function() {
+				    if (this.readyState === 4 && this.status === 200) {
+				    	res = JSON.parse(this.responseText);
+				    	if (res.status == 200) {
+				    		var td_status = document.createElement('td');
+
+				    		td_status.style.color = "red";
+							td_status.innerHTML = "Not Complete";
+
+							var td_actions = get_default_actions_cell(id, '0');
+							row.replaceChild(td_status, row.children[2]);
+							row.replaceChild(td_actions, row.children[3]);
+
+				    	}
+				    }
+				}
+				xhttp.send(JSON.stringify(object))
 			}
 
-			var xmlhttp = new XMLHttpRequest();
-			var theUrl = "main.php"
-			xmlhttp.open("POST", theUrl, true);
-			xmlhttp.setRequestHeader("Content-Type", "application/json");
-			xmlhttp.onreadystatechange = function() {
-			    if (this.readyState === 4 && this.status === 200) {
-			        create_table(JSON.parse(this.responseText))
+			function fetch() {
 
-			        addEventListeners("complete", complete_function);
-			        addEventListeners("edit", edit_function);
-			        addEventListeners("delete", delete_function);
-
-
-			    }
+				var xmlhttp = new XMLHttpRequest();
+				var theUrl = "main.php"
+				xmlhttp.open("POST", theUrl, true);
+				xmlhttp.setRequestHeader("Content-Type", "application/json");
+				xmlhttp.onreadystatechange = function() {
+				    if (this.readyState === 4 && this.status === 200) {
+				        create_table(JSON.parse(this.responseText))
+				    }
+				}
+				xmlhttp.send(JSON.stringify({'fetchall': 1}));
 			}
-			xmlhttp.send(JSON.stringify({'fetchall': 1}));
+			setInterval(fetch, 2000);
 		</script>
 	</body>
 </html>
