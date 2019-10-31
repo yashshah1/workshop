@@ -60,6 +60,12 @@
                 $action = true;
                 $alert_result = $conn->query($query);
             }
+            else if ($key[0] == 'A') {
+                $id = $_POST['name'];
+                $query = "INSERT INTO `tasks` (`id`, `task`, `status`) VALUES (NULL, '$id', '0')";
+                $action = true;
+                $alert_result = $conn->query($query);
+            }
             if($action) {
                 if($alert_result) {
                     $res = array();
