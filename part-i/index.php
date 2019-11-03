@@ -11,9 +11,9 @@
     }
     $alert_result = false;
     $message = '';
-    if(isset($_POST)) {
-        if (isset($_POST['add_new_task'])) {
-            $name = $_POST['name_of_task'];
+    if(isset($_GET)) {
+        if (isset($_GET['add_new_task'])) {
+            $name = $_GET['name_of_task'];
             if (strlen($name) > 0) {
                 $query = "insert into `tasks` (`id`, `task`, `status`) values (NULL, '$name', '0');";
                 $alert_result = $conn->query($query);
@@ -23,7 +23,7 @@
             }
         }
         else {
-            foreach($_POST as $key => $value) {
+            foreach($_GET as $key => $value) {
                 if($key[0] == 'D') {
                     $id = substr($key, 1);
                     $query = "delete from tasks where id=$id";
@@ -42,7 +42,7 @@
                 }
                 else if ($key[0] == 'U') {
                     $id = substr($key, 1);
-                    $newname = $_POST['newname'];
+                    $newname = $_GET['newname'];
     
                     $query = "update tasks set task=\"$newname\" where id=$id";
                     $alert_result = $conn->query($query);
@@ -80,7 +80,7 @@
         </style>
     </head>
     <body>
-        <form action="index.php" method="POST">
+        <form action="index.php" method="GET">
             <?php
             if ($result->num_rows == 0) {
                 echo "<strong>No rows</strong>";
@@ -144,8 +144,8 @@
                     </table>
                 ";
             }
-            if(isset($_POST)) {
-                foreach($_POST as $key => $value){
+            if(isset($_GET)) {
+                foreach($_GET as $key => $value){
                     if($key[0] == 'E') {
                         $id = substr($key, 1);
                         $query = "select task from tasks where id=$id";
